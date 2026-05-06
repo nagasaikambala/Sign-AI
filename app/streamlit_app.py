@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+import av
 import cv2
 import numpy as np
 import math
@@ -41,7 +42,7 @@ offset = 20
 # VIDEO PROCESSOR
 # =========================
 
-class SignLanguageProcessor(VideoTransformerBase):
+class SignProcessor(VideoTransformerBase):
 
     def transform(self, frame):
 
@@ -67,7 +68,10 @@ class SignLanguageProcessor(VideoTransformerBase):
 
             if imgCrop.size != 0:
 
-                imgWhite = np.ones((imgSize, imgSize, 3), np.uint8) * 255
+                imgWhite = np.ones(
+                    (imgSize, imgSize, 3),
+                    np.uint8
+                ) * 255
 
                 aspectRatio = h / w
 
@@ -84,9 +88,11 @@ class SignLanguageProcessor(VideoTransformerBase):
                             (wCal, imgSize)
                         )
 
-                        wGap = math.ceil((imgSize - wCal) / 2)
+                        wGap = math.ceil(
+                            (imgSize - wCal) / 2
+                        )
 
-                        imgWhite[:, wGap:wCal + wGap] = imgResize
+                        imgWhite[:, wGap:wCal+wGap] = imgResize
 
                     else:
 
@@ -99,9 +105,15 @@ class SignLanguageProcessor(VideoTransformerBase):
                             (imgSize, hCal)
                         )
 
-                        hGap = math.ceil((imgSize - hCal) / 2)
+                        hGap = math.ceil(
+                            (imgSize - hCal) / 2
+                        )
 
-                        imgWhite[hGap:hCal + hGap, :] = imgResize
+                        imgWhite[hGap:hCal+hGap, :] = imgResize
+
+                    # =========================
+                    # PREPROCESS
+                    # =========================
 
                     imgInput = cv2.cvtColor(
                         imgWhite,
@@ -115,6 +127,10 @@ class SignLanguageProcessor(VideoTransformerBase):
                         axis=0
                     )
 
+                    # =========================
+                    # PREDICTION
+                    # =========================
+
                     prediction = model.predict(
                         imgInput,
                         verbose=0
@@ -125,6 +141,10 @@ class SignLanguageProcessor(VideoTransformerBase):
                     confidence = prediction[0][index]
 
                     label = labels[index]
+
+                    # =========================
+                    # DRAW UI
+                    # =========================
 
                     cv2.rectangle(
                         imgOutput,
@@ -150,10 +170,15 @@ class SignLanguageProcessor(VideoTransformerBase):
         return imgOutput
 
 # =========================
-# START STREAM
+# START WEBRTC STREAM
 # =========================
 
 webrtc_streamer(
     key="sign-language",
-    video_transformer_factory=SignLanguageProcessor
+    video_transformer_factory=SignProcessor,
+    media_stream_constraints={
+        "video": True,
+        "audio": False
+    },
+    async_processing=True,
 )
