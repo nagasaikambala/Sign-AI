@@ -1,0 +1,11 @@
+tensorflow
+opencv-python
+cvzone
+numpy
+streamlit
+scikit-learn
+Pillow
+mediapipe==0.10.9
+streamlit-webrtc
+av
+tornado
